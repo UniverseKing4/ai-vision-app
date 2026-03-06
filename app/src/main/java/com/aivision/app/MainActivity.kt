@@ -70,10 +70,18 @@ class MainActivity : AppCompatActivity() {
         }
         
         binding.analyzeButton.setOnClickListener { analyzeImage() }
+        
+        binding.copyButton.setOnClickListener {
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("AI Analysis", binding.resultText.text)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
+        updateThemeIcon(menu)
         return true
     }
 
@@ -81,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_dark_mode -> {
                 toggleDarkMode()
+                invalidateOptionsMenu()
                 true
             }
             R.id.action_settings -> {
@@ -89,6 +98,12 @@ class MainActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+    
+    private fun updateThemeIcon(menu: Menu) {
+        val currentMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        val isDark = currentMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        menu.findItem(R.id.action_dark_mode)?.setIcon(if (isDark) R.drawable.ic_light_mode else R.drawable.ic_dark_mode)
     }
     
     private fun toggleDarkMode() {
