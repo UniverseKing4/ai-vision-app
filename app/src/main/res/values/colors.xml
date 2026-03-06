@@ -8,4 +8,5 @@
     <color name="text_primary">#0F172A</color>
     <color name="text_secondary">#64748B</color>
     <color name="divider">#E2E8F0</color>
+    <color name="ic_launcher_background">#2563EB</color>
 </resources>
