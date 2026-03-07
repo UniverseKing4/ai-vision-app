@@ -42,6 +42,8 @@ class MainActivity : AppCompatActivity() {
     private var startTime: Long = 0
     private var analysisJob: kotlinx.coroutines.Job? = null
     private var balanceJob: kotlinx.coroutines.Job? = null
+    private var completionTime: Long = 0
+    private var balanceStartTime: Long = 0
     
     private val pickImage = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -95,7 +97,21 @@ class MainActivity : AppCompatActivity() {
             val showBalance = it.getBoolean("showBalance", false)
             if (showBalance) {
                 val apiKey = prefs.getString("api_key", "") ?: ""
-                showBalanceNotification(apiKey)
+                completionTime = it.getLong("completionTime", 0)
+                balanceStartTime = it.getLong("balanceStartTime", 0)
+                
+                val elapsed = System.currentTimeMillis() - completionTime
+                if (elapsed < 1500) {
+                    // Still showing completion message
+                    CoroutineScope(Dispatchers.Main).launch {
+                        showCompletionSnackbar()
+                        kotlinx.coroutines.delay(1500 - elapsed)
+                        showBalanceNotification(apiKey)
+                    }
+                } else if (balanceStartTime > 0) {
+                    // Should show balance
+                    showBalanceNotification(apiKey)
+                }
             }
         }
         
@@ -130,7 +146,23 @@ class MainActivity : AppCompatActivity() {
         }
         if (balanceJob?.isActive == true) {
             outState.putBoolean("showBalance", true)
+            outState.putLong("completionTime", completionTime)
+            outState.putLong("balanceStartTime", balanceStartTime)
         }
+    }
+    
+    private fun showCompletionSnackbar() {
+        val snackbar = com.google.android.material.snackbar.Snackbar.make(
+            binding.root,
+            "✓ Analysis complete!",
+            com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+        )
+        val view = snackbar.view
+        val params = view.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+        params.gravity = android.view.Gravity.TOP
+        params.topMargin = binding.toolbar.height + 16
+        view.layoutParams = params
+        snackbar.show()
     }
     
     private fun showBalanceNotification(apiKey: String) {
@@ -171,19 +203,11 @@ class MainActivity : AppCompatActivity() {
                     binding.resultText.text = result
                     binding.resultCard.visibility = View.VISIBLE
                     
-                    val snackbar = com.google.android.material.snackbar.Snackbar.make(
-                        binding.root,
-                        "✓ Analysis complete!",
-                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                    )
-                    val view = snackbar.view
-                    val params = view.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
-                    params.gravity = android.view.Gravity.TOP
-                    params.topMargin = binding.toolbar.height + 16
-                    view.layoutParams = params
-                    snackbar.show()
+                    completionTime = System.currentTimeMillis()
+                    showCompletionSnackbar()
                     
                     kotlinx.coroutines.delay(1500)
+                    balanceStartTime = System.currentTimeMillis()
                     showBalanceNotification(apiKey)
                 }
             } catch (e: Exception) {
