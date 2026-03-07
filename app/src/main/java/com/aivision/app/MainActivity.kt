@@ -141,21 +141,34 @@ class MainActivity : AppCompatActivity() {
                     binding.resultText.text = result
                     binding.resultCard.visibility = View.VISIBLE
                     
-                    com.google.android.material.snackbar.Snackbar.make(
+                    val snackbar = com.google.android.material.snackbar.Snackbar.make(
                         binding.root,
                         "✓ Analysis complete!",
                         com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                    ).setAnchorView(binding.toolbar).show()
+                    )
+                    val view = snackbar.view
+                    val params = view.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+                    params.gravity = android.view.Gravity.TOP
+                    params.topMargin = binding.toolbar.height + 16
+                    view.layoutParams = params
+                    snackbar.show()
                     
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             val balance = getApiBalance(apiKey)
                             withContext(Dispatchers.Main) {
-                                com.google.android.material.snackbar.Snackbar.make(
+                                kotlinx.coroutines.delay(1000)
+                                val balanceSnackbar = com.google.android.material.snackbar.Snackbar.make(
                                     binding.root,
                                     "Balance: $balance",
                                     com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-                                ).setAnchorView(binding.toolbar).show()
+                                )
+                                val balanceView = balanceSnackbar.view
+                                val balanceParams = balanceView.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+                                balanceParams.gravity = android.view.Gravity.TOP
+                                balanceParams.topMargin = binding.toolbar.height + 16
+                                balanceView.layoutParams = balanceParams
+                                balanceSnackbar.show()
                             }
                         } catch (e: Exception) {}
                     }
@@ -267,23 +280,36 @@ class MainActivity : AppCompatActivity() {
                         binding.resultText.text = result
                         binding.resultCard.visibility = View.VISIBLE
                         
-                        // Show completion snackbar
-                        com.google.android.material.snackbar.Snackbar.make(
+                        // Show completion snackbar at top
+                        val snackbar = com.google.android.material.snackbar.Snackbar.make(
                             binding.root,
                             "✓ Analysis complete!",
                             com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                        ).setAnchorView(binding.toolbar).show()
+                        )
+                        val view = snackbar.view
+                        val params = view.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+                        params.gravity = android.view.Gravity.TOP
+                        params.topMargin = binding.toolbar.height + 16
+                        view.layoutParams = params
+                        snackbar.show()
                         
                         // Get API balance
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
                                 val balance = getApiBalance(apiKey)
                                 withContext(Dispatchers.Main) {
-                                    com.google.android.material.snackbar.Snackbar.make(
+                                    kotlinx.coroutines.delay(1000)
+                                    val balanceSnackbar = com.google.android.material.snackbar.Snackbar.make(
                                         binding.root,
                                         "Balance: $balance",
                                         com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-                                    ).setAnchorView(binding.toolbar).show()
+                                    )
+                                    val balanceView = balanceSnackbar.view
+                                    val balanceParams = balanceView.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+                                    balanceParams.gravity = android.view.Gravity.TOP
+                                    balanceParams.topMargin = binding.toolbar.height + 16
+                                    balanceView.layoutParams = balanceParams
+                                    balanceSnackbar.show()
                                 }
                             } catch (e: Exception) {
                                 // Ignore balance errors
