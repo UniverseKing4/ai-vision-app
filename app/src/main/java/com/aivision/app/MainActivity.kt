@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     private val prefs by lazy { getSharedPreferences("app_prefs", MODE_PRIVATE) }
     private var timerJob: kotlinx.coroutines.Job? = null
     private var startTime: Long = 0
+    private var analysisJob: kotlinx.coroutines.Job? = null
     
     private val pickImage = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -80,6 +81,16 @@ class MainActivity : AppCompatActivity() {
                 binding.resultText.text = resultText
                 binding.resultCard.visibility = View.VISIBLE
             }
+            val isAnalyzing = it.getBoolean("isAnalyzing", false)
+            if (isAnalyzing) {
+                binding.progressBar.visibility = View.VISIBLE
+                binding.timerText.visibility = View.VISIBLE
+                binding.analyzeButton.isEnabled = false
+                startTime = it.getLong("startTime", System.currentTimeMillis())
+                startTimer()
+                // Resume analysis
+                selectedImageUri?.let { uri -> resumeAnalysis(uri) }
+            }
         }
         
         binding.selectButton.setOnClickListener {
@@ -106,6 +117,57 @@ class MainActivity : AppCompatActivity() {
         selectedImageUri?.let { outState.putString("imageUri", it.toString()) }
         if (binding.resultCard.visibility == View.VISIBLE) {
             outState.putString("resultText", binding.resultText.text.toString())
+        }
+        if (binding.progressBar.visibility == View.VISIBLE) {
+            outState.putBoolean("isAnalyzing", true)
+            outState.putLong("startTime", startTime)
+        }
+    }
+    
+    private fun resumeAnalysis(uri: Uri) {
+        val apiKey = prefs.getString("api_key", "") ?: return
+        
+        analysisJob = CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                val base64 = bitmapToBase64(bitmap)
+                val result = callPollinationsAPI(apiKey, base64)
+                
+                withContext(Dispatchers.Main) {
+                    timerJob?.cancel()
+                    binding.progressBar.visibility = View.GONE
+                    binding.timerText.visibility = View.GONE
+                    binding.analyzeButton.isEnabled = true
+                    binding.resultText.text = result
+                    binding.resultCard.visibility = View.VISIBLE
+                    
+                    com.google.android.material.snackbar.Snackbar.make(
+                        binding.root,
+                        "✓ Analysis complete!",
+                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                    ).setAnchorView(binding.toolbar).show()
+                    
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val balance = getApiBalance(apiKey)
+                            withContext(Dispatchers.Main) {
+                                com.google.android.material.snackbar.Snackbar.make(
+                                    binding.root,
+                                    "Balance: $balance",
+                                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                                ).setAnchorView(binding.toolbar).show()
+                            }
+                        } catch (e: Exception) {}
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    timerJob?.cancel()
+                    binding.progressBar.visibility = View.GONE
+                    binding.timerText.visibility = View.GONE
+                    binding.analyzeButton.isEnabled = true
+                }
+            }
         }
     }
 
@@ -191,7 +253,7 @@ class MainActivity : AppCompatActivity() {
             startTime = System.currentTimeMillis()
             startTimer()
             
-            CoroutineScope(Dispatchers.IO).launch {
+            analysisJob = CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
                     val base64 = bitmapToBase64(bitmap)
@@ -210,7 +272,7 @@ class MainActivity : AppCompatActivity() {
                             binding.root,
                             "✓ Analysis complete!",
                             com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                        ).show()
+                        ).setAnchorView(binding.toolbar).show()
                         
                         // Get API balance
                         CoroutineScope(Dispatchers.IO).launch {
@@ -221,7 +283,7 @@ class MainActivity : AppCompatActivity() {
                                         binding.root,
                                         "Balance: $balance",
                                         com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-                                    ).show()
+                                    ).setAnchorView(binding.toolbar).show()
                                 }
                             } catch (e: Exception) {
                                 // Ignore balance errors
@@ -336,7 +398,7 @@ class MainActivity : AppCompatActivity() {
             val body = response.body?.string() ?: return "Unknown"
             val jsonResponse = JSONObject(body)
             val balance = jsonResponse.optDouble("balance", -1.0)
-            return if (balance >= 0) "$balance Pollen" else "Active"
+            return if (balance >= 0) String.format("%.5f Pollen", balance) else "Active"
         }
     }
 }
