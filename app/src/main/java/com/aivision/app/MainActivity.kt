@@ -305,7 +305,7 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun showModelSelectionDialog() {
-        val models = arrayOf("openai", "gemini-flash", "flux")
+        val models = arrayOf("openai", "gemini-flash", "polly", "claude-fast", "kimi")
         val currentModel = prefs.getString("model", "openai")
         val selectedIndex = models.indexOf(currentModel)
         
