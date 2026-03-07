@@ -153,11 +153,6 @@ class MainActivity : AppCompatActivity() {
         params.gravity = android.view.Gravity.TOP
         params.topMargin = binding.toolbar.height + 16
         view.layoutParams = params
-        snackbar.addCallback(object : com.google.android.material.snackbar.Snackbar.Callback() {
-            override fun onDismissed(transientBottomBar: com.google.android.material.snackbar.Snackbar?, event: Int) {
-                showingCompletion = false
-            }
-        })
         snackbar.show()
     }
     
@@ -173,12 +168,12 @@ class MainActivity : AppCompatActivity() {
         params.gravity = android.view.Gravity.TOP
         params.topMargin = binding.toolbar.height + 16
         view.layoutParams = params
-        snackbar.addCallback(object : com.google.android.material.snackbar.Snackbar.Callback() {
-            override fun onDismissed(transientBottomBar: com.google.android.material.snackbar.Snackbar?, event: Int) {
-                showingBalance = false
-            }
-        })
         snackbar.show()
+        
+        CoroutineScope(Dispatchers.Main).launch {
+            kotlinx.coroutines.delay(3000)
+            showingBalance = false
+        }
     }
     
     private fun showBalanceNotification(apiKey: String) {
@@ -212,7 +207,8 @@ class MainActivity : AppCompatActivity() {
                     
                     showCompletionSnackbar()
                     
-                    kotlinx.coroutines.delay(1500)
+                    kotlinx.coroutines.delay(2000)
+                    showingCompletion = false
                     showBalanceNotification(apiKey)
                 }
             } catch (e: Exception) {
