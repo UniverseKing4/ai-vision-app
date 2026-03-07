@@ -41,9 +41,9 @@ class MainActivity : AppCompatActivity() {
     private var timerJob: kotlinx.coroutines.Job? = null
     private var startTime: Long = 0
     private var analysisJob: kotlinx.coroutines.Job? = null
-    private var balanceJob: kotlinx.coroutines.Job? = null
-    private var completionTime: Long = 0
-    private var balanceStartTime: Long = 0
+    private var showingCompletion = false
+    private var showingBalance = false
+    private var cachedBalance = ""
     
     private val pickImage = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -94,24 +94,16 @@ class MainActivity : AppCompatActivity() {
                 // Resume analysis
                 selectedImageUri?.let { uri -> resumeAnalysis(uri) }
             }
-            val showBalance = it.getBoolean("showBalance", false)
-            if (showBalance) {
-                val apiKey = prefs.getString("api_key", "") ?: ""
-                completionTime = it.getLong("completionTime", 0)
-                balanceStartTime = it.getLong("balanceStartTime", 0)
-                
-                val elapsed = System.currentTimeMillis() - completionTime
-                if (elapsed < 1500) {
-                    // Still showing completion message
-                    CoroutineScope(Dispatchers.Main).launch {
-                        showCompletionSnackbar()
-                        kotlinx.coroutines.delay(1500 - elapsed)
-                        showBalanceNotification(apiKey)
-                    }
-                } else if (balanceStartTime > 0) {
-                    // Should show balance
-                    showBalanceNotification(apiKey)
-                }
+            
+            showingCompletion = it.getBoolean("showingCompletion", false)
+            showingBalance = it.getBoolean("showingBalance", false)
+            cachedBalance = it.getString("cachedBalance", "")
+            
+            if (showingCompletion) {
+                showCompletionSnackbar()
+            }
+            if (showingBalance && cachedBalance.isNotEmpty()) {
+                showBalanceSnackbar(cachedBalance)
             }
         }
         
@@ -144,14 +136,13 @@ class MainActivity : AppCompatActivity() {
             outState.putBoolean("isAnalyzing", true)
             outState.putLong("startTime", startTime)
         }
-        if (balanceJob?.isActive == true) {
-            outState.putBoolean("showBalance", true)
-            outState.putLong("completionTime", completionTime)
-            outState.putLong("balanceStartTime", balanceStartTime)
-        }
+        outState.putBoolean("showingCompletion", showingCompletion)
+        outState.putBoolean("showingBalance", showingBalance)
+        outState.putString("cachedBalance", cachedBalance)
     }
     
     private fun showCompletionSnackbar() {
+        showingCompletion = true
         val snackbar = com.google.android.material.snackbar.Snackbar.make(
             binding.root,
             "✓ Analysis complete!",
@@ -162,6 +153,31 @@ class MainActivity : AppCompatActivity() {
         params.gravity = android.view.Gravity.TOP
         params.topMargin = binding.toolbar.height + 16
         view.layoutParams = params
+        snackbar.addCallback(object : com.google.android.material.snackbar.Snackbar.Callback() {
+            override fun onDismissed(transientBottomBar: com.google.android.material.snackbar.Snackbar?, event: Int) {
+                showingCompletion = false
+            }
+        })
+        snackbar.show()
+    }
+    
+    private fun showBalanceSnackbar(balance: String) {
+        showingBalance = true
+        val snackbar = com.google.android.material.snackbar.Snackbar.make(
+            binding.root,
+            "Balance: $balance",
+            com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+        )
+        val view = snackbar.view
+        val params = view.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+        params.gravity = android.view.Gravity.TOP
+        params.topMargin = binding.toolbar.height + 16
+        view.layoutParams = params
+        snackbar.addCallback(object : com.google.android.material.snackbar.Snackbar.Callback() {
+            override fun onDismissed(transientBottomBar: com.google.android.material.snackbar.Snackbar?, event: Int) {
+                showingBalance = false
+            }
+        })
         snackbar.show()
     }
     
