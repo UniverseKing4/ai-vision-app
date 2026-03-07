@@ -182,21 +182,12 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun showBalanceNotification(apiKey: String) {
-        balanceJob = CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val balance = getApiBalance(apiKey)
+                cachedBalance = balance
                 withContext(Dispatchers.Main) {
-                    val balanceSnackbar = com.google.android.material.snackbar.Snackbar.make(
-                        binding.root,
-                        "Balance: $balance",
-                        com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-                    )
-                    val balanceView = balanceSnackbar.view
-                    val balanceParams = balanceView.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
-                    balanceParams.gravity = android.view.Gravity.TOP
-                    balanceParams.topMargin = binding.toolbar.height + 16
-                    balanceView.layoutParams = balanceParams
-                    balanceSnackbar.show()
+                    showBalanceSnackbar(balance)
                 }
             } catch (e: Exception) {}
         }
@@ -219,11 +210,9 @@ class MainActivity : AppCompatActivity() {
                     binding.resultText.text = result
                     binding.resultCard.visibility = View.VISIBLE
                     
-                    completionTime = System.currentTimeMillis()
                     showCompletionSnackbar()
                     
                     kotlinx.coroutines.delay(1500)
-                    balanceStartTime = System.currentTimeMillis()
                     showBalanceNotification(apiKey)
                 }
             } catch (e: Exception) {
