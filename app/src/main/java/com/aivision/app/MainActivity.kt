@@ -56,17 +56,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val isDark = prefs.getBoolean("dark_mode", false)
-        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
-            if (isDark) androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES 
-            else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
-        )
-        
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
         setSupportActionBar(binding.toolbar)
+        
+        // Set proper background after splash
+        window.setBackgroundDrawableResource(R.color.background)
         
         binding.selectButton.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
@@ -121,11 +118,11 @@ class MainActivity : AppCompatActivity() {
         prefs.edit().putBoolean("dark_mode", !isDark).apply()
         
         val newMode = if (isDark) {
-            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            AppCompatDelegate.MODE_NIGHT_NO
         } else {
-            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            AppCompatDelegate.MODE_NIGHT_YES
         }
-        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(newMode)
+        AppCompatDelegate.setDefaultNightMode(newMode)
     }
     
     private fun selectImage() {
