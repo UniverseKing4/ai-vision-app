@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         binding.promptInputLayout.setEndIconOnClickListener {
             if (clearClickCount == 0) {
                 clearClickCount = 1
-                Toast.makeText(this, "Clear prompt?", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Press again to clear prompt", Toast.LENGTH_SHORT).show()
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     clearClickCount = 0
                 }, 3000)
@@ -143,6 +143,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
+        binding.promptInputLayout.isEndIconVisible = false
         binding.promptInput.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
