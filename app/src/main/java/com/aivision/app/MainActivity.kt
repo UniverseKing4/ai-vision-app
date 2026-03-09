@@ -453,7 +453,7 @@ class MainActivity : AppCompatActivity() {
             val prompt = if (customPrompt.isEmpty()) "Describe the image" else customPrompt
             val result = callPollinationsAPI(apiKey, base64, prompt)
             
-            results.append("**━━━ IMAGE ${index + 1} ━━━**\n")
+            results.append("**━━━ IMAGE ${index + 1} ━━━**\n\n")
             results.append(result)
             results.append("\n\n")
         }
