@@ -243,7 +243,7 @@ class MainActivity : AppCompatActivity() {
                     binding.progressBar.visibility = View.GONE
                     binding.timerText.visibility = View.GONE
                     binding.analyzeButton.isEnabled = true
-                    markwon.setMarkdown(binding.resultText, result.toString())
+                    markwon.setMarkdown(binding.resultText, result)
                     binding.resultCard.visibility = View.VISIBLE
                     
                     showCompletionSnackbar()
@@ -376,7 +376,7 @@ class MainActivity : AppCompatActivity() {
                     binding.progressBar.visibility = View.GONE
                     binding.timerText.visibility = View.GONE
                     binding.analyzeButton.isEnabled = true
-                    markwon.setMarkdown(binding.resultText, result.toString())
+                    markwon.setMarkdown(binding.resultText, result)
                     binding.resultCard.visibility = View.VISIBLE
                     
                     val snackbar = com.google.android.material.snackbar.Snackbar.make(
@@ -439,40 +439,25 @@ class MainActivity : AppCompatActivity() {
         return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
     
-    private fun analyzeMultipleImages(apiKey: String, uris: List<Uri>, customPrompt: String): android.text.Spanned {
+    private fun analyzeMultipleImages(apiKey: String, uris: List<Uri>, customPrompt: String): String {
         if (uris.size == 1) {
             val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uris[0])
             val base64 = bitmapToBase64(bitmap)
-            return android.text.SpannableString(callPollinationsAPI(apiKey, base64, customPrompt))
+            return callPollinationsAPI(apiKey, base64, customPrompt)
         }
         
-        val results = android.text.SpannableStringBuilder()
+        val results = StringBuilder()
         uris.forEachIndexed { index, uri ->
             val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
             val base64 = bitmapToBase64(bitmap)
             val prompt = if (customPrompt.isEmpty()) "Describe the image" else customPrompt
             val result = callPollinationsAPI(apiKey, base64, prompt)
             
-            if (index > 0) results.append("\n")
-            val header = "━━━ IMAGE ${index + 1} ━━━\n"
-            val start = results.length
-            results.append(header)
-            results.setSpan(
-                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-                start,
-                start + header.length - 1,
-                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            results.setSpan(
-                android.text.style.RelativeSizeSpan(1.2f),
-                start,
-                start + header.length - 1,
-                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+            results.append("**━━━ IMAGE ${index + 1} ━━━**\n\n")
             results.append(result)
             results.append("\n\n")
         }
-        return results
+        return results.toString()
     }
     
     private fun callPollinationsAPI(apiKey: String, base64Image: String, customPrompt: String = ""): String {
