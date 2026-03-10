@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private var timerJob: kotlinx.coroutines.Job? = null
     private var startTime: Long = 0
     private var analysisJob: kotlinx.coroutines.Job? = null
+    private lateinit var originalButtonBackground: android.graphics.drawable.Drawable
     private val markwon by lazy { 
         io.noties.markwon.Markwon.builder(this)
             .usePlugin(io.noties.markwon.linkify.LinkifyPlugin.create())
@@ -458,6 +459,10 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
         binding.timerText.visibility = View.VISIBLE
         binding.analyzeButton.text = "Stop"
+        // Store original background drawable before changing it
+        if (!::originalButtonBackground.isInitialized) {
+            originalButtonBackground = binding.analyzeButton.background
+        }
         binding.analyzeButton.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
         binding.analyzeButton.isEnabled = true
         binding.resultCard.visibility = View.GONE
@@ -468,7 +473,10 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.GONE
         binding.timerText.visibility = View.GONE
         binding.analyzeButton.text = getString(R.string.analyze)
-        binding.analyzeButton.background = null // Reset to default Material Design background
+        // Restore original Material Design background
+        if (::originalButtonBackground.isInitialized) {
+            binding.analyzeButton.background = originalButtonBackground
+        }
         binding.analyzeButton.isEnabled = selectedImageUris.isNotEmpty()
     }
     
