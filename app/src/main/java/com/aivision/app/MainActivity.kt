@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private var timerJob: kotlinx.coroutines.Job? = null
     private var startTime: Long = 0
     private var analysisJob: kotlinx.coroutines.Job? = null
+    private var originalButtonTint: android.content.res.ColorStateList? = null
     private val markwon by lazy { 
         io.noties.markwon.Markwon.builder(this)
             .usePlugin(io.noties.markwon.linkify.LinkifyPlugin.create())
@@ -458,6 +459,10 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
         binding.timerText.visibility = View.VISIBLE
         binding.analyzeButton.text = "Stop"
+        // Store original tint before changing it
+        if (originalButtonTint == null) {
+            originalButtonTint = binding.analyzeButton.backgroundTintList
+        }
         // Use backgroundTint to change color while preserving Material Design styling
         binding.analyzeButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
             ContextCompat.getColor(this, android.R.color.holo_red_light)
@@ -471,8 +476,8 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.GONE
         binding.timerText.visibility = View.GONE
         binding.analyzeButton.text = getString(R.string.analyze)
-        // Reset to default Material Design tint
-        binding.analyzeButton.backgroundTintList = null
+        // Restore original Material Design tint
+        binding.analyzeButton.backgroundTintList = originalButtonTint
         binding.analyzeButton.isEnabled = selectedImageUris.isNotEmpty()
     }
     
