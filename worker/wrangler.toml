@@ -2,5 +2,9 @@ name = "aivision-proxy"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "064323274e8347e8bc36876259057e0c"
+
 [env.production]
 vars = { ENVIRONMENT = "production" }

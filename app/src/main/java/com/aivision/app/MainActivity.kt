@@ -252,8 +252,11 @@ class MainActivity : AppCompatActivity() {
                     
                     showCompletionSnackbar()
                     
-                    kotlinx.coroutines.delay(1500)
-                    showBalanceNotification(apiKey)
+                    // Only show balance for custom API keys
+                    if (apiKey.isNotEmpty()) {
+                        kotlinx.coroutines.delay(1500)
+                        showBalanceNotification(apiKey)
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -325,6 +328,36 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogBinding.root)
             .create()
         
+        // Handle clear button
+        dialogBinding.apiKeyInputLayout.isEndIconVisible = false
+        dialogBinding.apiKeyInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                dialogBinding.apiKeyInputLayout.isEndIconVisible = !s.isNullOrEmpty()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        
+        var clearClickCount = 0
+        dialogBinding.apiKeyInputLayout.setEndIconOnClickListener {
+            if (clearClickCount == 0) {
+                clearClickCount = 1
+                Toast.makeText(this, "Press again to clear API key", Toast.LENGTH_SHORT).show()
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    clearClickCount = 0
+                }, 3000)
+            } else {
+                dialogBinding.apiKeyInput.text?.clear()
+                clearClickCount = 0
+            }
+        }
+        
+        // Handle get API key link
+        dialogBinding.getApiKeyLink.setOnClickListener {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://enter.pollinations.ai"))
+            startActivity(intent)
+        }
+        
         dialogBinding.saveButton.setOnClickListener {
             val key = dialogBinding.apiKeyInput.text.toString()
             prefs.edit().putString("api_key", key).apply()
@@ -390,8 +423,11 @@ class MainActivity : AppCompatActivity() {
                     view.layoutParams = params
                     snackbar.show()
                     
-                    kotlinx.coroutines.delay(1500)
-                    showBalanceNotification(apiKey)
+                    // Only show balance for custom API keys
+                    if (apiKey.isNotEmpty()) {
+                        kotlinx.coroutines.delay(1500)
+                        showBalanceNotification(apiKey)
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
