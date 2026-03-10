@@ -72,7 +72,6 @@ class MainActivity : AppCompatActivity() {
                 
                 if (selectedImageUris.isNotEmpty()) {
                     updateImageDisplay()
-                    binding.analyzeButton.isEnabled = true
                 }
             }
         }
@@ -98,7 +97,6 @@ class MainActivity : AppCompatActivity() {
             if (imageUriStrings != null && imageUriStrings.isNotEmpty()) {
                 selectedImageUris = imageUriStrings.map { str -> Uri.parse(str) }.toMutableList()
                 updateImageDisplay()
-                binding.analyzeButton.isEnabled = true
             }
             val resultText = it.getString("resultText")
             if (resultText != null) {
@@ -107,9 +105,7 @@ class MainActivity : AppCompatActivity() {
             }
             val isAnalyzing = it.getBoolean("isAnalyzing", false)
             if (isAnalyzing) {
-                binding.progressBar.visibility = View.VISIBLE
-                binding.timerText.visibility = View.VISIBLE
-                binding.analyzeButton.isEnabled = false
+                setAnalyzingState()
                 startTime = it.getLong("startTime", System.currentTimeMillis())
                 startTimer()
                 if (selectedImageUris.isNotEmpty()) {
@@ -230,6 +226,11 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
+        
+        // Update button state based on image selection
+        if (binding.analyzeButton.text != "Stop") {
+            binding.analyzeButton.isEnabled = selectedImageUris.isNotEmpty()
+        }
     }
     
     private fun showBalanceNotification(apiKey: String) {
@@ -252,12 +253,7 @@ class MainActivity : AppCompatActivity() {
                 val result = analyzeMultipleImages(apiKey, uris, customPrompt)
                 
                 withContext(Dispatchers.Main) {
-                    timerJob?.cancel()
-                    binding.progressBar.visibility = View.GONE
-                    binding.timerText.visibility = View.GONE
-                    binding.analyzeButton.text = getString(R.string.analyze)
-                    binding.analyzeButton.background = null // Reset to default background
-                    binding.analyzeButton.isEnabled = true
+                    resetToIdleState()
                     markwon.setMarkdown(binding.resultText, result)
                     binding.resultCard.visibility = View.VISIBLE
                     
@@ -269,14 +265,14 @@ class MainActivity : AppCompatActivity() {
                         showBalanceNotification(apiKey)
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                withContext(Dispatchers.Main) {
+                    resetToIdleState()
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    timerJob?.cancel()
-                    binding.progressBar.visibility = View.GONE
-                    binding.timerText.visibility = View.GONE
-                    binding.analyzeButton.text = getString(R.string.analyze)
-                    binding.analyzeButton.background = null // Reset to default background
-                    binding.analyzeButton.isEnabled = true
+                    resetToIdleState()
+                }
                 }
             }
         }
@@ -387,13 +383,7 @@ class MainActivity : AppCompatActivity() {
     
     private fun stopAnalysis() {
         analysisJob?.cancel()
-        timerJob?.cancel()
-        binding.progressBar.visibility = View.GONE
-        binding.timerText.visibility = View.GONE
-        binding.analyzeButton.text = getString(R.string.analyze)
-        binding.analyzeButton.background = null // Reset to default background
-        binding.analyzeButton.isEnabled = true
-        Toast.makeText(this, "Analysis stopped", Toast.LENGTH_SHORT).show()
+        resetToIdleState()
     }
     
     private fun showModelSelectionDialog() {
@@ -417,12 +407,8 @@ class MainActivity : AppCompatActivity() {
         
         if (selectedImageUris.isEmpty()) return
         
-        binding.progressBar.visibility = View.VISIBLE
-        binding.timerText.visibility = View.VISIBLE
-        binding.analyzeButton.text = "Stop"
-        binding.analyzeButton.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
-        binding.analyzeButton.isEnabled = true
-        binding.resultCard.visibility = View.GONE
+        // Set analyzing state
+        setAnalyzingState()
         
         startTime = System.currentTimeMillis()
         startTimer()
@@ -433,12 +419,7 @@ class MainActivity : AppCompatActivity() {
                 val result = analyzeMultipleImages(apiKey, selectedImageUris, customPrompt)
                 
                 withContext(Dispatchers.Main) {
-                    timerJob?.cancel()
-                    binding.progressBar.visibility = View.GONE
-                    binding.timerText.visibility = View.GONE
-                    binding.analyzeButton.text = getString(R.string.analyze)
-                    binding.analyzeButton.background = null // Reset to default background
-                    binding.analyzeButton.isEnabled = true
+                    resetToIdleState()
                     markwon.setMarkdown(binding.resultText, result)
                     binding.resultCard.visibility = View.VISIBLE
                     
@@ -460,18 +441,36 @@ class MainActivity : AppCompatActivity() {
                         showBalanceNotification(apiKey)
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                withContext(Dispatchers.Main) {
+                    resetToIdleState()
+                    Toast.makeText(this@MainActivity, "Analysis stopped", Toast.LENGTH_SHORT).show()
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    timerJob?.cancel()
-                    binding.progressBar.visibility = View.GONE
-                    binding.timerText.visibility = View.GONE
-                    binding.analyzeButton.text = getString(R.string.analyze)
-                    binding.analyzeButton.background = null // Reset to default background
-                    binding.analyzeButton.isEnabled = true
+                    resetToIdleState()
                     Toast.makeText(this@MainActivity, "${getString(R.string.error_occurred)}: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
+    }
+    
+    private fun setAnalyzingState() {
+        binding.progressBar.visibility = View.VISIBLE
+        binding.timerText.visibility = View.VISIBLE
+        binding.analyzeButton.text = "Stop"
+        binding.analyzeButton.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
+        binding.analyzeButton.isEnabled = true
+        binding.resultCard.visibility = View.GONE
+    }
+    
+    private fun resetToIdleState() {
+        timerJob?.cancel()
+        binding.progressBar.visibility = View.GONE
+        binding.timerText.visibility = View.GONE
+        binding.analyzeButton.text = getString(R.string.analyze)
+        binding.analyzeButton.background = null // Reset to default Material Design background
+        binding.analyzeButton.isEnabled = selectedImageUris.isNotEmpty()
     }
     
     private fun startTimer() {
