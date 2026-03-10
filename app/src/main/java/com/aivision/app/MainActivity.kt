@@ -124,7 +124,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        binding.analyzeButton.setOnClickListener { analyzeImage() }
+        binding.analyzeButton.setOnClickListener { 
+            if (binding.analyzeButton.text == "Stop") {
+                stopAnalysis()
+            } else {
+                analyzeImage()
+            }
+        }
         
         binding.copyButton.setOnClickListener {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
@@ -246,6 +252,7 @@ class MainActivity : AppCompatActivity() {
                     timerJob?.cancel()
                     binding.progressBar.visibility = View.GONE
                     binding.timerText.visibility = View.GONE
+                    binding.analyzeButton.text = getString(R.string.analyze)
                     binding.analyzeButton.isEnabled = true
                     markwon.setMarkdown(binding.resultText, result)
                     binding.resultCard.visibility = View.VISIBLE
@@ -263,6 +270,7 @@ class MainActivity : AppCompatActivity() {
                     timerJob?.cancel()
                     binding.progressBar.visibility = View.GONE
                     binding.timerText.visibility = View.GONE
+                    binding.analyzeButton.text = getString(R.string.analyze)
                     binding.analyzeButton.isEnabled = true
                 }
             }
@@ -372,6 +380,16 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
     
+    private fun stopAnalysis() {
+        analysisJob?.cancel()
+        timerJob?.cancel()
+        binding.progressBar.visibility = View.GONE
+        binding.timerText.visibility = View.GONE
+        binding.analyzeButton.text = getString(R.string.analyze)
+        binding.analyzeButton.isEnabled = true
+        Toast.makeText(this, "Analysis stopped", Toast.LENGTH_SHORT).show()
+    }
+    
     private fun showModelSelectionDialog() {
         val models = arrayOf("openai", "gemini-flash", "claude-fast", "kimi", "polly")
         val currentModel = prefs.getString("model", "openai")
@@ -395,7 +413,8 @@ class MainActivity : AppCompatActivity() {
         
         binding.progressBar.visibility = View.VISIBLE
         binding.timerText.visibility = View.VISIBLE
-        binding.analyzeButton.isEnabled = false
+        binding.analyzeButton.text = "Stop"
+        binding.analyzeButton.isEnabled = true
         binding.resultCard.visibility = View.GONE
         
         startTime = System.currentTimeMillis()
@@ -410,6 +429,7 @@ class MainActivity : AppCompatActivity() {
                     timerJob?.cancel()
                     binding.progressBar.visibility = View.GONE
                     binding.timerText.visibility = View.GONE
+                    binding.analyzeButton.text = getString(R.string.analyze)
                     binding.analyzeButton.isEnabled = true
                     markwon.setMarkdown(binding.resultText, result)
                     binding.resultCard.visibility = View.VISIBLE
@@ -437,6 +457,7 @@ class MainActivity : AppCompatActivity() {
                     timerJob?.cancel()
                     binding.progressBar.visibility = View.GONE
                     binding.timerText.visibility = View.GONE
+                    binding.analyzeButton.text = getString(R.string.analyze)
                     binding.analyzeButton.isEnabled = true
                     Toast.makeText(this@MainActivity, "${getString(R.string.error_occurred)}: ${e.message}", Toast.LENGTH_LONG).show()
                 }
@@ -500,8 +521,8 @@ class MainActivity : AppCompatActivity() {
     
     private fun callPollinationsAPI(apiKey: String, base64Image: String, customPrompt: String = ""): String {
         val client = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
             .build()
         
         val prompt = customPrompt.ifEmpty { "Describe the image" }
